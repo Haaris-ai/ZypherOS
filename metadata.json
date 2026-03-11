@@ -1,0 +1,8 @@
+{
+  "name": "ZypherOS",
+  "description": "A lightweight, browser-based OS environment with a ChromeOS-inspired design, featuring a simulated x86/ARM64 binary runner (ZEL) and built-in Zypher AI integration.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
