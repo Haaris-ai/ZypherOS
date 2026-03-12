@@ -210,29 +210,56 @@ const DistroBuilderApp: React.FC = () => {
                      <p className="text-xs text-zinc-500">Create a file at <code>.github/workflows/build.yml</code> in your repository with this content to compile the ISO automatically on every push.</p>
                      <div className="bg-black/60 p-4 rounded-xl font-mono text-[10px] text-zinc-400 overflow-x-auto">
                        <pre>{`name: Build ZypherOS ISO
-on: [push]
+on:
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: 'Architecture to build'
+        required: true
+        default: 'arm64'
+        type: choice
+        options:
+          - arm64
+          - x86_64
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install Build Tools
-        run: sudo apt update && sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves gcc-aarch64-linux-gnu xorriso mtools
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves xorriso mtools
+          if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
+            sudo apt install -y gcc-aarch64-linux-gnu
+          else
+            sudo apt install -y gcc-x86-64-linux-gnu
+          fi
       - name: Build Kernel
         run: |
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+          if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
+            make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
+            make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+          else
+            make ARCH=x86_64 CROSS_COMPILE=x86_64-linux-gnu- defconfig
+            make ARCH=x86_64 CROSS_COMPILE=x86_64-linux-gnu- -j$(nproc)
+          fi
       - name: Master ISO
         run: |
           mkdir -p iso_root
-          cp arch/arm64/boot/Image iso_root/kernel.bin
+          if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
+            cp arch/arm64/boot/Image iso_root/kernel.bin
+          else
+            cp arch/x86/boot/bzImage iso_root/kernel.bin
+          fi
           # Assuming eltorito.img is in your repo root
-          xorriso -as mkisofs -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o zypheros.iso iso_root/
+          xorriso -as mkisofs -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o zypheros-\${{ github.event.inputs.arch }}.iso iso_root/
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
-          name: zypheros-iso
-          path: zypheros.iso`}</pre>
+          name: zypheros-\${{ github.event.inputs.arch }}-iso
+          path: zypheros-\${{ github.event.inputs.arch }}.iso`}</pre>
                      </div>
                   </div>
                 </div>
