@@ -7,6 +7,7 @@ const DistroBuilderApp: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   const [arch, setArch] = useState<'universal' | 'arm64' | 'x86_64'>('arm64');
+  const [target, setTarget] = useState<'pi5' | 'tablet' | 'generic'>('pi5');
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, id: string) => {
@@ -96,20 +97,45 @@ const DistroBuilderApp: React.FC = () => {
             </div>
             <div className="grid grid-cols-2 gap-6">
                <div className="space-y-3">
-                 <label className="text-[10px] font-black text-white/30 uppercase tracking-widest">Target Arch</label>
+                 <label className="text-[10px] font-black text-white/30 uppercase tracking-widest">Target Device</label>
                  <div className="grid grid-cols-1 gap-2">
-                    {['universal', 'arm64', 'x86_64'].map(a => (
-                      <button key={a} onClick={() => setArch(a as any)} className={`px-4 py-3 rounded-xl border text-left text-sm font-bold transition-all ${arch === a ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>{a.toUpperCase()}</button>
+                    {[
+                      { id: 'pi5', label: 'Raspberry Pi 5', sub: 'Broadcom BCM2712' },
+                      { id: 'tablet', label: 'Android Device', sub: 'Tablet / Phone (ARM64)' },
+                      { id: 'generic', label: 'Generic PC', sub: 'UEFI / BIOS' }
+                    ].map(t => (
+                      <button 
+                        key={t.id} 
+                        onClick={() => {
+                          setTarget(t.id as any);
+                          if (t.id === 'generic') setArch('x86_64');
+                          else setArch('arm64');
+                        }} 
+                        className={`px-4 py-3 rounded-xl border text-left transition-all ${target === t.id ? 'bg-indigo-600/10 border-indigo-500' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}
+                      >
+                        <div className={`text-sm font-bold ${target === t.id ? 'text-indigo-400' : 'text-white'}`}>{t.label}</div>
+                        <div className="text-[9px] text-zinc-500 font-medium uppercase tracking-tighter">{t.sub}</div>
+                      </button>
                     ))}
                  </div>
                </div>
-               <div className="bg-white/5 rounded-3xl p-6 border border-white/5 flex flex-col justify-center">
-                  <h3 className="text-xs font-black uppercase text-white/40 mb-3">Mastering Checklist</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 text-xs font-bold text-emerald-400"><CheckCircle2 size={14}/> BIOS/UEFI Hybrid</div>
-                    <div className="flex items-center gap-3 text-xs font-bold text-emerald-400"><CheckCircle2 size={14}/> No-Emulation Mode</div>
-                    <div className="flex items-center gap-3 text-xs font-bold text-emerald-400"><CheckCircle2 size={14}/> 2048-Byte Alignment</div>
-                  </div>
+               <div className="space-y-6">
+                 <div className="space-y-3">
+                   <label className="text-[10px] font-black text-white/30 uppercase tracking-widest">Architecture</label>
+                   <div className="grid grid-cols-2 gap-2">
+                      {['arm64', 'x86_64'].map(a => (
+                        <button key={a} onClick={() => setArch(a as any)} className={`px-4 py-3 rounded-xl border text-center text-xs font-bold transition-all ${arch === a ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>{a.toUpperCase()}</button>
+                      ))}
+                   </div>
+                 </div>
+                 <div className="bg-white/5 rounded-3xl p-6 border border-white/5 flex flex-col justify-center">
+                    <h3 className="text-xs font-black uppercase text-white/40 mb-3">Mastering Checklist</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3 text-xs font-bold text-emerald-400"><CheckCircle2 size={14}/> {target === 'tablet' ? 'PRoot Compatible' : 'BIOS/UEFI Hybrid'}</div>
+                      <div className="flex items-center gap-3 text-xs font-bold text-emerald-400"><CheckCircle2 size={14}/> {target === 'tablet' ? 'Exynos 1380 Optimized' : 'No-Emulation Mode'}</div>
+                      <div className="flex items-center gap-3 text-xs font-bold text-emerald-400"><CheckCircle2 size={14}/> 2048-Byte Alignment</div>
+                    </div>
+                 </div>
                </div>
             </div>
             <button onClick={startBuild} className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl shadow-2xl flex items-center justify-center gap-4">COMPILE ELTORITO.IMG <Zap size={20} /></button>
@@ -152,8 +178,12 @@ const DistroBuilderApp: React.FC = () => {
         {stage === 'recipe' && (
           <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in">
              <div className="space-y-4">
-               <h2 className="text-3xl font-black text-white tracking-tight">Deployment Recipe: Mastering & WSL Build</h2>
-               <p className="text-zinc-500 text-sm leading-relaxed">To deploy ZypherOS to hardware, follow these specific steps for Ubuntu 24.04 LTS on WSL and ImgBurn on Windows.</p>
+               <h2 className="text-3xl font-black text-white tracking-tight">Deployment Recipe: {target === 'tablet' ? 'Android Execution' : 'Mastering & WSL Build'}</h2>
+               <p className="text-zinc-500 text-sm leading-relaxed">
+                 {target === 'tablet' 
+                   ? 'To run ZypherOS on your tablet, follow these steps to set up the PRoot environment and execute the kernel.' 
+                   : 'To deploy ZypherOS to hardware, follow these specific steps for Ubuntu 24.04 LTS on WSL and ImgBurn on Windows.'}
+               </p>
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -161,14 +191,26 @@ const DistroBuilderApp: React.FC = () => {
                 <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 space-y-6">
                   <div className="flex items-center gap-4 text-rose-500">
                     <Monitor size={24}/>
-                    <h3 className="font-black text-lg">STEP A: ImgBurn Mastering</h3>
+                    <h3 className="font-black text-lg">STEP A: {target === 'tablet' ? 'Termux Environment' : 'ImgBurn Mastering'}</h3>
                   </div>
                   <div className="space-y-3 text-xs text-zinc-400">
-                    <p className="flex gap-2"><span className="font-black text-white">01.</span> Create 'ISO_ROOT' on Windows Desktop.</p>
-                    <p className="flex gap-2"><span className="font-black text-white">02.</span> Move your compiled kernel into the folder.</p>
-                    <p className="flex gap-2"><span className="font-black text-white">03.</span> ImgBurn {"->"} Advanced {"->"} Bootable Disc.</p>
-                    <p className="flex gap-2"><span className="font-black text-white">04.</span> Select the downloaded 'eltorito.img'.</p>
-                    <p className="flex gap-2"><span className="font-black text-white">05.</span> Mode: 'None', Load Seg: '07C0', Sectors: '4'.</p>
+                    {target === 'tablet' ? (
+                      <>
+                        <p className="flex gap-2"><span className="font-black text-white">01.</span> Install Termux from F-Droid.</p>
+                        <p className="flex gap-2"><span className="font-black text-white">02.</span> Run: <code>pkg install proot-distro xorriso</code>.</p>
+                        <p className="flex gap-2"><span className="font-black text-white">03.</span> Run: <code>proot-distro install ubuntu</code>.</p>
+                        <p className="flex gap-2"><span className="font-black text-white">04.</span> Login: <code>proot-distro login ubuntu</code>.</p>
+                        <p className="flex gap-2 italic text-indigo-400">Advanced: We will use xorriso to build an El Torito ISO for emulation.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="flex gap-2"><span className="font-black text-white">01.</span> Create 'ISO_ROOT' on Windows Desktop.</p>
+                        <p className="flex gap-2"><span className="font-black text-white">02.</span> Move your compiled kernel into the folder.</p>
+                        <p className="flex gap-2"><span className="font-black text-white">03.</span> ImgBurn {"->"} Advanced {"->"} Bootable Disc.</p>
+                        <p className="flex gap-2"><span className="font-black text-white">04.</span> Select the downloaded 'eltorito.img'.</p>
+                        <p className="flex gap-2"><span className="font-black text-white">05.</span> Mode: 'None', Load Seg: '07C0', Sectors: '4'.</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -178,34 +220,62 @@ const DistroBuilderApp: React.FC = () => {
                     <TerminalSquare size={24}/>
                     <div className="flex flex-col">
                        <h3 className="font-black text-lg leading-tight">STEP B: Kernel Build</h3>
-                       <p className="text-[10px] font-black uppercase text-indigo-400/50 tracking-widest">Ubuntu 24.04 LTS (WSL)</p>
+                       <p className="text-[10px] font-black uppercase text-indigo-400/50 tracking-widest">
+                         Ubuntu 24.04 LTS (WSL)
+                         {target === 'tablet' && <span className="ml-2 text-amber-500/80">— Est: 45-90 min</span>}
+                       </p>
                     </div>
                   </div>
                   <div className="relative group">
                     <div className="space-y-4 font-mono text-[10px] bg-black/40 p-4 rounded-xl text-zinc-400 border border-white/5 custom-scrollbar max-h-64 overflow-y-auto">
                       <div className="space-y-1">
                          <p className="text-white/40"># 1. Update and Install Dependencies</p>
-                         <p className="text-white">sudo apt update && sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves gcc-x86-64-linux-gnu gcc-aarch64-linux-gnu</p>
+                         <p className="text-white">{target === 'tablet' ? '' : 'sudo '}apt update && {target === 'tablet' ? '' : 'sudo '}apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves gcc-x86-64-linux-gnu gcc-aarch64-linux-gnu git</p>
+                      </div>
+
+                      <div className="space-y-1">
+                         <p className="text-white/40"># 2. Clone Kernel Source</p>
+                         <p className="text-white">git clone --depth 1 https://github.com/torvalds/linux.git mica-kernel && cd mica-kernel</p>
                       </div>
                       
                       <div className="space-y-1">
-                         <p className="text-white/40"># 2. Configure for {arch === 'arm64' ? 'ARM64' : 'x86_64'} {arch === 'universal' ? 'Hybrid' : ''}</p>
+                         <p className="text-white/40"># 3. Configure & Inject ZypherOS Identity</p>
                          <p className="text-white">make ARCH={arch === 'arm64' ? 'arm64' : 'x86_64'} defconfig</p>
+                         <p className="text-white">scripts/config --set-str LOCALVERSION "-zypheros-v1"</p>
+                         <p className="text-emerald-500/80"># Inject custom boot message into kernel source</p>
+                         <p className="text-white">sed -i 's/pr_notice("Linux version %s/pr_notice("Welcome to ZypherOS!\\nLinux version %s/' init/main.c</p>
                       </div>
   
                       <div className="space-y-1">
-                         <p className="text-white/40"># 3. Compile Mica Kernel</p>
+                         <p className="text-white/40"># 4. Compile Mica Kernel</p>
                          <p className="text-white">make ARCH={arch === 'arm64' ? 'arm64' : 'x86_64'} CROSS_COMPILE={arch === 'arm64' ? 'aarch64-linux-gnu-' : 'x86_64-linux-gnu-'} -j$(nproc)</p>
                       </div>
   
                       <div className="space-y-1 pt-2 border-t border-white/5">
-                         <p className="text-emerald-500/80"># Move Binary to Windows Host</p>
-                         <p className="text-emerald-400">cp arch/{arch === 'arm64' ? 'arm64' : 'x86'}/boot/{arch === 'arm64' ? 'Image' : 'bzImage'} /mnt/c/Users/$(whoami)/Desktop/ISO_ROOT/kernel.bin</p>
-                         <p className="text-[9px] text-amber-500/50 italic mt-1">Tip: If /mnt/c is not found, ensure WSL automount is enabled or use 'sudo mount -t drvfs C: /mnt/c'</p>
+                         <p className="text-emerald-500/80"># {target === 'tablet' ? 'STEP 5: Launch ZypherOS' : 'STEP 5: Move Binary to Windows Host'}</p>
+                         <div className="text-emerald-400 space-y-1">
+                           {target === 'tablet' ? (
+                             <>
+                               <p>{target === 'tablet' ? '' : 'sudo '}apt install -y qemu-system-aarch64</p>
+                               <p>qemu-system-aarch64 -M virt -cpu max -kernel arch/arm64/boot/Image -m 512 -nographic</p>
+                             </>
+                           ) : (
+                             <p>cp arch/${arch === 'arm64' ? 'arm64' : 'x86'}/boot/${arch === 'arm64' ? 'Image' : 'bzImage'} /mnt/c/Users/$(whoami)/Desktop/ISO_ROOT/kernel.bin</p>
+                           )}
+                         </div>
+                         {target === 'tablet' && <p className="text-[9px] text-amber-500/50 italic mt-1">Note: This launches ZypherOS inside a virtual machine (QEMU) safely.</p>}
+                         {target !== 'tablet' && <p className="text-[9px] text-amber-500/50 italic mt-1">Tip: If /mnt/c is not found, ensure WSL automount is enabled or use 'sudo mount -t drvfs C: /mnt/c'</p>}
                       </div>
                     </div>
                     <button 
-                      onClick={() => copyToClipboard(`sudo apt update && sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves gcc-x86-64-linux-gnu gcc-aarch64-linux-gnu\nmake ARCH=${arch === 'arm64' ? 'arm64' : 'x86_64'} defconfig\nmake ARCH=${arch === 'arm64' ? 'arm64' : 'x86_64'} CROSS_COMPILE=${arch === 'arm64' ? 'aarch64-linux-gnu-' : 'x86_64-linux-gnu-'} -j$(nproc)\ncp arch/${arch === 'arm64' ? 'arm64' : 'x86'}/boot/${arch === 'arm64' ? 'Image' : 'bzImage'} /mnt/c/Users/$(whoami)/Desktop/ISO_ROOT/kernel.bin`, 'wsl')}
+                      onClick={() => {
+                        const sudoPrefix = target === 'tablet' ? '' : 'sudo ';
+                        const baseCmd = `${sudoPrefix}apt update && ${sudoPrefix}apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves gcc-x86-64-linux-gnu gcc-aarch64-linux-gnu git\ngit clone --depth 1 https://github.com/torvalds/linux.git mica-kernel && cd mica-kernel\nmake ARCH=${arch === 'arm64' ? 'arm64' : 'x86_64'} defconfig\nscripts/config --set-str LOCALVERSION "-zypheros-v1"\nsed -i 's/pr_notice("Linux version %s/pr_notice("Welcome to ZypherOS!\\\\nLinux version %s/' init/main.c\nmake ARCH=${arch === 'arm64' ? 'arm64' : 'x86_64'} CROSS_COMPILE=${arch === 'arm64' ? 'aarch64-linux-gnu-' : 'x86_64-linux-gnu-'} -j$(nproc)`;
+                        const finalCmd = target === 'tablet' 
+                          ? `${baseCmd}\napt install -y qemu-system-aarch64\nqemu-system-aarch64 -M virt -cpu max -kernel arch/arm64/boot/Image -m 512 -nographic`
+                          : `${baseCmd}\ncp arch/${arch === 'arm64' ? 'arm64' : 'x86'}/boot/${arch === 'arm64' ? 'Image' : 'bzImage'} /mnt/c/Users/$(whoami)/Desktop/ISO_ROOT/kernel.bin`;
+                        copyToClipboard(finalCmd, 'wsl');
+                      }}
                       className="absolute top-2 right-2 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all"
                       title="Copy Commands"
                     >
@@ -214,12 +284,67 @@ const DistroBuilderApp: React.FC = () => {
                   </div>
                 </div>
 
-                {/* STEP C: GITHUB ACTIONS */}
+                {/* STEP C: ISO MASTERING (EL TORITO) */}
+                <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 space-y-6 md:col-span-2">
+                  <div className="flex items-center gap-4 text-emerald-400">
+                    <Disc size={24}/>
+                    <div className="flex flex-col">
+                       <h3 className="font-black text-lg leading-tight">STEP C: {target === 'tablet' ? 'ISO Mastering (El Torito) on Android' : 'ISO Mastering (El Torito) on Windows'}</h3>
+                       <p className="text-[10px] font-black uppercase text-emerald-400/50 tracking-widest">Creating the Bootable Media</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-black/40 p-6 rounded-2xl border border-white/5 space-y-4">
+                      <h4 className="text-xs font-black uppercase text-white/60 tracking-widest flex items-center gap-2">
+                        <Terminal size={14}/> {target === 'tablet' ? 'Termux / xorriso' : 'ImgBurn Settings'}
+                      </h4>
+                      <div className="space-y-3 text-xs text-zinc-400">
+                        {target === 'tablet' ? (
+                          <>
+                            <p className="flex gap-2"><span className="font-black text-white">01.</span> Create <code>iso_root</code> folder.</p>
+                            <p className="flex gap-2"><span className="font-black text-white">02.</span> Move <code>kernel.bin</code> and <code>eltorito.img</code> inside.</p>
+                            <p className="flex gap-2"><span className="font-black text-white">03.</span> Run the xorriso command (right) to build the ISO.</p>
+                            <p className="flex gap-2"><span className="font-black text-white">04.</span> Download **Limbo PC Emulator** from Play Store.</p>
+                            <p className="flex gap-2"><span className="font-black text-white">05.</span> Load the ISO in Limbo and set CPU to 'qemu64'.</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="flex gap-2"><span className="font-black text-white">01.</span> Open ImgBurn {"->"} Create image from files.</p>
+                            <p className="flex gap-2"><span className="font-black text-white">02.</span> Advanced {"->"} Bootable Disc {"->"} Make Bootable.</p>
+                            <p className="flex gap-2"><span className="font-black text-white">03.</span> Emulation: 'None', Load Seg: '07C0', Sectors: '4'.</p>
+                            <p className="flex gap-2"><span className="font-black text-white">04.</span> Select <code>eltorito.img</code> as the Boot Image.</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="relative group">
+                      <div className="bg-black/60 p-6 rounded-2xl border border-white/10 font-mono text-[10px] text-zinc-400 h-full">
+                        <p className="text-white/40 mb-2"># {target === 'tablet' ? 'Build ISO in Termux' : 'Manual mkisofs command'}</p>
+                        <p className="text-emerald-400 leading-relaxed break-all">
+                          {target === 'tablet' 
+                            ? `xorriso -as mkisofs -o zypheros.iso -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table ./iso_root`
+                            : `mkisofs -o zypheros.iso -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table ./iso_root`
+                          }
+                        </p>
+                        <button 
+                          onClick={() => copyToClipboard(target === 'tablet' ? `xorriso -as mkisofs -o zypheros.iso -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table ./iso_root` : `mkisofs -o zypheros.iso -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table ./iso_root`, 'iso-cmd')}
+                          className="absolute top-4 right-4 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                        >
+                          {copyStatus === 'iso-cmd' ? <CheckCircle2 size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* STEP D: GITHUB ACTIONS */}
                 <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 space-y-6 md:col-span-2">
                   <div className="flex items-center gap-4 text-white">
                     <Code size={24}/>
                     <div className="flex flex-col">
-                       <h3 className="font-black text-lg leading-tight">STEP C: GitHub Actions (Automated Build)</h3>
+                       <h3 className="font-black text-lg leading-tight">STEP D: GitHub Actions (Automated Build)</h3>
                        <p className="text-[10px] font-black uppercase text-white/40 tracking-widest">CI/CD Pipeline (.github/workflows/build.yml)</p>
                     </div>
                   </div>
@@ -239,6 +364,15 @@ on:
         options:
           - arm64
           - x86_64
+      target:
+        description: 'Target Device'
+        required: true
+        default: 'pi5'
+        type: choice
+        options:
+          - pi5
+          - tablet
+          - generic
 
 jobs:
   build:
@@ -248,35 +382,45 @@ jobs:
       - name: Install Build Tools
         run: |
           sudo apt update
-          sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves xorriso mtools
+          sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves xorriso mtools git
           if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
             sudo apt install -y gcc-aarch64-linux-gnu
           else
             sudo apt install -y gcc-x86-64-linux-gnu
           fi
+      - name: Clone Kernel Source
+        run: git clone --depth 1 https://github.com/torvalds/linux.git mica-kernel
       - name: Build Kernel
         run: |
+          cd mica-kernel
           if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
             make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
+            scripts/config --set-str LOCALVERSION "-zypheros-v1"
+            sed -i 's/pr_notice("Linux version %s/pr_notice("Welcome to ZypherOS!\\nLinux version %s/' init/main.c
             make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
           else
             make ARCH=x86_64 CROSS_COMPILE=x86_64-linux-gnu- defconfig
+            scripts/config --set-str LOCALVERSION "-zypheros-v1"
+            sed -i 's/pr_notice("Linux version %s/pr_notice("Welcome to ZypherOS!\\nLinux version %s/' init/main.c
             make ARCH=x86_64 CROSS_COMPILE=x86_64-linux-gnu- -j$(nproc)
           fi
       - name: Master ISO
         run: |
           mkdir -p iso_root
           if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
-            cp arch/arm64/boot/Image iso_root/kernel.bin
+            cp mica-kernel/arch/arm64/boot/Image iso_root/kernel.bin
           else
-            cp arch/x86/boot/bzImage iso_root/kernel.bin
+            cp mica-kernel/arch/x86/boot/bzImage iso_root/kernel.bin
           fi
-          # Assuming eltorito.img is in your repo root
-          xorriso -as mkisofs -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o zypheros-\${{ github.event.inputs.arch }}.iso iso_root/
+          # Ensure eltorito.img is in the ISO root for xorriso
+          cp eltorito.img iso_root/
+          xorriso -as mkisofs -o zypheros-\${{ github.event.inputs.arch }}.iso \
+            -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table \
+            iso_root/
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
-          name: zypheros-\${{ github.event.inputs.arch }}-iso
+          name: zypheros-\${{ github.event.inputs.target }}-\${{ github.event.inputs.arch }}-iso
           path: zypheros-\${{ github.event.inputs.arch }}.iso`, 'github')}
                           className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest"
                         >
@@ -297,6 +441,15 @@ on:
         options:
           - arm64
           - x86_64
+      target:
+        description: 'Target Device'
+        required: true
+        default: 'pi5'
+        type: choice
+        options:
+          - pi5
+          - tablet
+          - generic
 
 jobs:
   build:
@@ -306,35 +459,45 @@ jobs:
       - name: Install Build Tools
         run: |
           sudo apt update
-          sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves xorriso mtools
+          sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves xorriso mtools git
           if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
             sudo apt install -y gcc-aarch64-linux-gnu
           else
             sudo apt install -y gcc-x86-64-linux-gnu
           fi
+      - name: Clone Kernel Source
+        run: git clone --depth 1 https://github.com/torvalds/linux.git mica-kernel
       - name: Build Kernel
         run: |
+          cd mica-kernel
           if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
             make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
+            scripts/config --set-str LOCALVERSION "-zypheros-v1"
+            sed -i 's/pr_notice("Linux version %s/pr_notice("Welcome to ZypherOS!\\\\nLinux version %s/' init/main.c
             make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
           else
             make ARCH=x86_64 CROSS_COMPILE=x86_64-linux-gnu- defconfig
+            scripts/config --set-str LOCALVERSION "-zypheros-v1"
+            sed -i 's/pr_notice("Linux version %s/pr_notice("Welcome to ZypherOS!\\\\nLinux version %s/' init/main.c
             make ARCH=x86_64 CROSS_COMPILE=x86_64-linux-gnu- -j$(nproc)
           fi
       - name: Master ISO
         run: |
           mkdir -p iso_root
           if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
-            cp arch/arm64/boot/Image iso_root/kernel.bin
+            cp mica-kernel/arch/arm64/boot/Image iso_root/kernel.bin
           else
-            cp arch/x86/boot/bzImage iso_root/kernel.bin
+            cp mica-kernel/arch/x86/boot/bzImage iso_root/kernel.bin
           fi
-          # Assuming eltorito.img is in your repo root
-          xorriso -as mkisofs -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o zypheros-\${{ github.event.inputs.arch }}.iso iso_root/
+          # Ensure eltorito.img is in the ISO root for xorriso
+          cp eltorito.img iso_root/
+          xorriso -as mkisofs -o zypheros-\${{ github.event.inputs.arch }}.iso \\
+            -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table \\
+            iso_root/
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
-          name: zypheros-\${{ github.event.inputs.arch }}-iso
+          name: zypheros-\${{ github.event.inputs.target }}-\${{ github.event.inputs.arch }}-iso
           path: zypheros-\${{ github.event.inputs.arch }}.iso`}</pre>
                      </div>
                   </div>
