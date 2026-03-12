@@ -6,7 +6,7 @@ const DistroBuilderApp: React.FC = () => {
   const [stage, setStage] = useState<'config' | 'building' | 'complete' | 'recipe'>('config');
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
-  const [arch, setArch] = useState<'universal' | 'arm64' | 'x86_64'>('universal');
+  const [arch, setArch] = useState<'universal' | 'arm64' | 'x86_64'>('arm64');
 
   const addLog = (msg: string) => setLogs(p => [...p, `[${new Date().toLocaleTimeString()}] ${msg}`]);
 
@@ -176,22 +176,23 @@ const DistroBuilderApp: React.FC = () => {
                   <div className="space-y-4 font-mono text-[10px] bg-black/40 p-4 rounded-xl text-zinc-400 border border-white/5 custom-scrollbar max-h-64 overflow-y-auto">
                     <div className="space-y-1">
                        <p className="text-white/40"># 1. Update and Install Dependencies</p>
-                       <p className="text-white">sudo apt update && sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves dwarves-tools gcc-x86-64-linux-gnu gcc-aarch64-linux-gnu</p>
+                       <p className="text-white">sudo apt update && sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves gcc-x86-64-linux-gnu gcc-aarch64-linux-gnu</p>
                     </div>
                     
                     <div className="space-y-1">
-                       <p className="text-white/40"># 2. Configure for x86_64 Hybrid</p>
-                       <p className="text-white">make ARCH=x86_64 defconfig</p>
+                       <p className="text-white/40"># 2. Configure for {arch === 'arm64' ? 'ARM64' : 'x86_64'} {arch === 'universal' ? 'Hybrid' : ''}</p>
+                       <p className="text-white">make ARCH={arch === 'arm64' ? 'arm64' : 'x86_64'} defconfig</p>
                     </div>
-
+ 
                     <div className="space-y-1">
                        <p className="text-white/40"># 3. Compile Mica Kernel</p>
-                       <p className="text-white">make ARCH=x86_64 CROSS_COMPILE=x86_64-linux-gnu- -j$(nproc)</p>
+                       <p className="text-white">make ARCH={arch === 'arm64' ? 'arm64' : 'x86_64'} CROSS_COMPILE={arch === 'arm64' ? 'aarch64-linux-gnu-' : 'x86_64-linux-gnu-'} -j$(nproc)</p>
                     </div>
-
+ 
                     <div className="space-y-1 pt-2 border-t border-white/5">
                        <p className="text-emerald-500/80"># Move Binary to Windows Host</p>
-                       <p className="text-emerald-400">cp arch/x86/boot/bzImage /mnt/c/Users/$(whoami)/Desktop/ISO_ROOT/kernel.bin</p>
+                       <p className="text-emerald-400">cp arch/{arch === 'arm64' ? 'arm64' : 'x86'}/boot/{arch === 'arm64' ? 'Image' : 'bzImage'} /mnt/c/Users/$(whoami)/Desktop/ISO_ROOT/kernel.bin</p>
+                       <p className="text-[9px] text-amber-500/50 italic mt-1">Tip: If /mnt/c is not found, ensure WSL automount is enabled or use 'sudo mount -t drvfs C: /mnt/c'</p>
                     </div>
                   </div>
                 </div>

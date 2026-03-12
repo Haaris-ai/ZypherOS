@@ -171,6 +171,14 @@ const TerminalApp: React.FC = () => {
         } else if (target === '..') {
           const current = config.fileSystem.find(i => i.id === currentFolderId);
           setCurrentFolderId(current?.parentId || null);
+        } else if (target === '/mnt/c' || target === 'C:' || target === '/c') {
+          addLines([
+            'ZEL_BRIDGE: Mapping Windows C:\\ drive to /mnt/c...',
+            'Accessing host filesystem via drvfs...',
+            'Directory: /mnt/c'
+          ]);
+          // We don't actually change the folder ID to keep them in the sandbox, 
+          // but we provide the visual feedback they expect.
         } else {
           const folder = fs.getFolderContent(currentFolderId).find(i => i.name.toLowerCase() === target.toLowerCase() && i.type === 'folder');
           if (folder) {
@@ -178,6 +186,22 @@ const TerminalApp: React.FC = () => {
           } else {
             addLines(`cd: no such directory: ${target}`);
           }
+        }
+        break;
+
+      case 'mount':
+        if (args[1] === '-t' && args[2] === 'drvfs' && args[3] === 'C:') {
+          addLines('C: successfully mounted to /mnt/c (drvfs)');
+        } else {
+          addLines([
+            'sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)',
+            'proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)',
+            'udev on /dev type devtmpfs (rw,nosuid,relatime,size=3991244k,nr_inodes=997811,mode=755)',
+            'devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)',
+            'tmpfs on /run type tmpfs (rw,nosuid,nodev,noexec,relatime,size=804364k,mode=755)',
+            '/dev/nvme0n1p1 on / type ext4 (rw,relatime,errors=remount-ro)',
+            'C: on /mnt/c type drvfs (rw,noatime,uid=1000,gid=1000,case=off)'
+          ]);
         }
         break;
 
