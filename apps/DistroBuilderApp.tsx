@@ -7,6 +7,14 @@ const DistroBuilderApp: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   const [arch, setArch] = useState<'universal' | 'arm64' | 'x86_64'>('arm64');
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopyStatus(id);
+      setTimeout(() => setCopyStatus(null), 2000);
+    });
+  };
 
   const addLog = (msg: string) => setLogs(p => [...p, `[${new Date().toLocaleTimeString()}] ${msg}`]);
 
@@ -173,27 +181,36 @@ const DistroBuilderApp: React.FC = () => {
                        <p className="text-[10px] font-black uppercase text-indigo-400/50 tracking-widest">Ubuntu 24.04 LTS (WSL)</p>
                     </div>
                   </div>
-                  <div className="space-y-4 font-mono text-[10px] bg-black/40 p-4 rounded-xl text-zinc-400 border border-white/5 custom-scrollbar max-h-64 overflow-y-auto">
-                    <div className="space-y-1">
-                       <p className="text-white/40"># 1. Update and Install Dependencies</p>
-                       <p className="text-white">sudo apt update && sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves gcc-x86-64-linux-gnu gcc-aarch64-linux-gnu</p>
+                  <div className="relative group">
+                    <div className="space-y-4 font-mono text-[10px] bg-black/40 p-4 rounded-xl text-zinc-400 border border-white/5 custom-scrollbar max-h-64 overflow-y-auto">
+                      <div className="space-y-1">
+                         <p className="text-white/40"># 1. Update and Install Dependencies</p>
+                         <p className="text-white">sudo apt update && sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves gcc-x86-64-linux-gnu gcc-aarch64-linux-gnu</p>
+                      </div>
+                      
+                      <div className="space-y-1">
+                         <p className="text-white/40"># 2. Configure for {arch === 'arm64' ? 'ARM64' : 'x86_64'} {arch === 'universal' ? 'Hybrid' : ''}</p>
+                         <p className="text-white">make ARCH={arch === 'arm64' ? 'arm64' : 'x86_64'} defconfig</p>
+                      </div>
+  
+                      <div className="space-y-1">
+                         <p className="text-white/40"># 3. Compile Mica Kernel</p>
+                         <p className="text-white">make ARCH={arch === 'arm64' ? 'arm64' : 'x86_64'} CROSS_COMPILE={arch === 'arm64' ? 'aarch64-linux-gnu-' : 'x86_64-linux-gnu-'} -j$(nproc)</p>
+                      </div>
+  
+                      <div className="space-y-1 pt-2 border-t border-white/5">
+                         <p className="text-emerald-500/80"># Move Binary to Windows Host</p>
+                         <p className="text-emerald-400">cp arch/{arch === 'arm64' ? 'arm64' : 'x86'}/boot/{arch === 'arm64' ? 'Image' : 'bzImage'} /mnt/c/Users/$(whoami)/Desktop/ISO_ROOT/kernel.bin</p>
+                         <p className="text-[9px] text-amber-500/50 italic mt-1">Tip: If /mnt/c is not found, ensure WSL automount is enabled or use 'sudo mount -t drvfs C: /mnt/c'</p>
+                      </div>
                     </div>
-                    
-                    <div className="space-y-1">
-                       <p className="text-white/40"># 2. Configure for {arch === 'arm64' ? 'ARM64' : 'x86_64'} {arch === 'universal' ? 'Hybrid' : ''}</p>
-                       <p className="text-white">make ARCH={arch === 'arm64' ? 'arm64' : 'x86_64'} defconfig</p>
-                    </div>
- 
-                    <div className="space-y-1">
-                       <p className="text-white/40"># 3. Compile Mica Kernel</p>
-                       <p className="text-white">make ARCH={arch === 'arm64' ? 'arm64' : 'x86_64'} CROSS_COMPILE={arch === 'arm64' ? 'aarch64-linux-gnu-' : 'x86_64-linux-gnu-'} -j$(nproc)</p>
-                    </div>
- 
-                    <div className="space-y-1 pt-2 border-t border-white/5">
-                       <p className="text-emerald-500/80"># Move Binary to Windows Host</p>
-                       <p className="text-emerald-400">cp arch/{arch === 'arm64' ? 'arm64' : 'x86'}/boot/{arch === 'arm64' ? 'Image' : 'bzImage'} /mnt/c/Users/$(whoami)/Desktop/ISO_ROOT/kernel.bin</p>
-                       <p className="text-[9px] text-amber-500/50 italic mt-1">Tip: If /mnt/c is not found, ensure WSL automount is enabled or use 'sudo mount -t drvfs C: /mnt/c'</p>
-                    </div>
+                    <button 
+                      onClick={() => copyToClipboard(`sudo apt update && sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves gcc-x86-64-linux-gnu gcc-aarch64-linux-gnu\nmake ARCH=${arch === 'arm64' ? 'arm64' : 'x86_64'} defconfig\nmake ARCH=${arch === 'arm64' ? 'arm64' : 'x86_64'} CROSS_COMPILE=${arch === 'arm64' ? 'aarch64-linux-gnu-' : 'x86_64-linux-gnu-'} -j$(nproc)\ncp arch/${arch === 'arm64' ? 'arm64' : 'x86'}/boot/${arch === 'arm64' ? 'Image' : 'bzImage'} /mnt/c/Users/$(whoami)/Desktop/ISO_ROOT/kernel.bin`, 'wsl')}
+                      className="absolute top-2 right-2 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                      title="Copy Commands"
+                    >
+                      {copyStatus === 'wsl' ? <CheckCircle2 size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                    </button>
                   </div>
                 </div>
 
@@ -207,7 +224,66 @@ const DistroBuilderApp: React.FC = () => {
                     </div>
                   </div>
                   <div className="bg-black/40 p-6 rounded-2xl border border-white/5 space-y-4">
-                     <p className="text-xs text-zinc-500">Create a file at <code>.github/workflows/build.yml</code> in your repository with this content to compile the ISO automatically on every push.</p>
+                     <div className="flex items-center justify-between">
+                        <p className="text-xs text-zinc-500">Create a file at <code>.github/workflows/build.yml</code> in your repository with this content to compile the ISO automatically on every push.</p>
+                        <button 
+                          onClick={() => copyToClipboard(`name: Build ZypherOS ISO
+on:
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: 'Architecture to build'
+        required: true
+        default: 'arm64'
+        type: choice
+        options:
+          - arm64
+          - x86_64
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Build Tools
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves xorriso mtools
+          if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
+            sudo apt install -y gcc-aarch64-linux-gnu
+          else
+            sudo apt install -y gcc-x86-64-linux-gnu
+          fi
+      - name: Build Kernel
+        run: |
+          if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
+            make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
+            make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+          else
+            make ARCH=x86_64 CROSS_COMPILE=x86_64-linux-gnu- defconfig
+            make ARCH=x86_64 CROSS_COMPILE=x86_64-linux-gnu- -j$(nproc)
+          fi
+      - name: Master ISO
+        run: |
+          mkdir -p iso_root
+          if [ "\${{ github.event.inputs.arch }}" = "arm64" ]; then
+            cp arch/arm64/boot/Image iso_root/kernel.bin
+          else
+            cp arch/x86/boot/bzImage iso_root/kernel.bin
+          fi
+          # Assuming eltorito.img is in your repo root
+          xorriso -as mkisofs -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o zypheros-\${{ github.event.inputs.arch }}.iso iso_root/
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: zypheros-\${{ github.event.inputs.arch }}-iso
+          path: zypheros-\${{ github.event.inputs.arch }}.iso`, 'github')}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest"
+                        >
+                          {copyStatus === 'github' ? <CheckCircle2 size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                          {copyStatus === 'github' ? 'Copied' : 'Copy YAML'}
+                        </button>
+                     </div>
                      <div className="bg-black/60 p-4 rounded-xl font-mono text-[10px] text-zinc-400 overflow-x-auto">
                        <pre>{`name: Build ZypherOS ISO
 on:
