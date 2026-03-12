@@ -19,14 +19,17 @@ jobs:
       - name: Install Build Tools
         run: |
           sudo apt update
-          sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves xorriso mtools
+          sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves xorriso mtools git
           if [ "${{ github.event.inputs.arch }}" = "arm64" ]; then
             sudo apt install -y gcc-aarch64-linux-gnu
           else
             sudo apt install -y gcc-x86-64-linux-gnu
           fi
+      - name: Clone Kernel Source
+        run: git clone --depth 1 https://github.com/torvalds/linux.git mica-kernel
       - name: Build Kernel
         run: |
+          cd mica-kernel
           if [ "${{ github.event.inputs.arch }}" = "arm64" ]; then
             make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
             make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
@@ -38,9 +41,9 @@ jobs:
         run: |
           mkdir -p iso_root
           if [ "${{ github.event.inputs.arch }}" = "arm64" ]; then
-            cp arch/arm64/boot/Image iso_root/kernel.bin
+            cp mica-kernel/arch/arm64/boot/Image iso_root/kernel.bin
           else
-            cp arch/x86/boot/bzImage iso_root/kernel.bin
+            cp mica-kernel/arch/x86/boot/bzImage iso_root/kernel.bin
           fi
           # Assuming eltorito.img is in your repo root
           xorriso -as mkisofs -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o zypheros-${{ github.event.inputs.arch }}.iso iso_root/
