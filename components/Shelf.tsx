@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { Wifi, WifiOff, Battery, Volume2, Command, Layout, Bluetooth, BluetoothConnected, EthernetPort, Cpu, Activity, Power, RotateCcw } from 'lucide-react';
+import { Wifi, WifiOff, Battery, Volume2, Command, Layout, Bluetooth, BluetoothConnected, EthernetPort, Cpu, Activity, Power, RotateCcw, LogOut } from 'lucide-react';
 import { AppID, WindowState, DragState } from '../types';
 import { APPS_REGISTRY, getIcon } from '../constants';
 import { OSContext } from '../App';
@@ -146,6 +146,13 @@ const Shelf: React.FC<ShelfProps> = ({
             <div className="p-3 mb-1">
               <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Power Options</p>
             </div>
+            <button 
+              onClick={() => os.logout()}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 text-white/60 transition-colors text-xs font-bold"
+            >
+              <LogOut size={16} />
+              LOGOUT
+            </button>
             <button 
               onClick={() => os.systemAction('restart')}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-indigo-500/20 text-indigo-400 transition-colors text-xs font-bold"

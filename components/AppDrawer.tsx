@@ -1,6 +1,6 @@
 
 import React, { useState, useContext } from 'react';
-import { Search } from 'lucide-react';
+import { Search, LogOut, User } from 'lucide-react';
 import { APPS_REGISTRY, getIcon } from '../constants';
 import { AppID } from '../types';
 import { OSContext } from '../App';
@@ -71,6 +71,31 @@ const AppDrawer: React.FC<AppDrawerProps> = ({ isOpen, onClose, onLaunch }) => {
               </div>
             </button>
           ))}
+        </div>
+
+        <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full border border-white/10 overflow-hidden bg-white/5">
+              {currentUser?.avatar ? (
+                <img src={currentUser.avatar} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white/40">
+                  <User size={20} />
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-white">{currentUser?.name || 'Guest'}</span>
+              <span className="text-[10px] text-white/40 uppercase tracking-widest font-black">Zypher ID: {currentUser?.id.slice(0, 8) || 'N/A'}</span>
+            </div>
+          </div>
+          <button 
+            onClick={() => os.logout()}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-rose-500/20 text-white/60 hover:text-rose-500 transition-all text-xs font-bold uppercase tracking-widest"
+          >
+            <LogOut size={16} />
+            Logout
+          </button>
         </div>
       </div>
     </div>

@@ -196,6 +196,46 @@ const DistroBuilderApp: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* STEP C: GITHUB ACTIONS */}
+                <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 space-y-6 md:col-span-2">
+                  <div className="flex items-center gap-4 text-white">
+                    <Code size={24}/>
+                    <div className="flex flex-col">
+                       <h3 className="font-black text-lg leading-tight">STEP C: GitHub Actions (Automated Build)</h3>
+                       <p className="text-[10px] font-black uppercase text-white/40 tracking-widest">CI/CD Pipeline (.github/workflows/build.yml)</p>
+                    </div>
+                  </div>
+                  <div className="bg-black/40 p-6 rounded-2xl border border-white/5 space-y-4">
+                     <p className="text-xs text-zinc-500">Create a file at <code>.github/workflows/build.yml</code> in your repository with this content to compile the ISO automatically on every push.</p>
+                     <div className="bg-black/60 p-4 rounded-xl font-mono text-[10px] text-zinc-400 overflow-x-auto">
+                       <pre>{`name: Build ZypherOS ISO
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Build Tools
+        run: sudo apt update && sudo apt install -y build-essential bison flex libssl-dev libelf-dev bc libncurses-dev dwarves gcc-aarch64-linux-gnu xorriso mtools
+      - name: Build Kernel
+        run: |
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- defconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+      - name: Master ISO
+        run: |
+          mkdir -p iso_root
+          cp arch/arm64/boot/Image iso_root/kernel.bin
+          # Assuming eltorito.img is in your repo root
+          xorriso -as mkisofs -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -o zypheros.iso iso_root/
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: zypheros-iso
+          path: zypheros.iso`}</pre>
+                     </div>
+                  </div>
+                </div>
              </div>
 
              <div className="bg-indigo-600/10 border border-indigo-500/20 p-8 rounded-3xl flex items-center gap-6">
