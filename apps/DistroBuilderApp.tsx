@@ -412,7 +412,10 @@ jobs:
           else
             cp mica-kernel/arch/x86/boot/bzImage iso_root/kernel.bin
           fi
-          # Ensure eltorito.img is in the ISO root for xorriso
+          # Ensure eltorito.img exists (create dummy if missing) and is in the ISO root for xorriso
+          if [ ! -f eltorito.img ]; then
+            dd if=/dev/zero of=eltorito.img bs=512 count=2880
+          fi
           cp eltorito.img iso_root/
           xorriso -as mkisofs -o zypheros-\${{ github.event.inputs.arch }}.iso \
             -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table \
@@ -489,7 +492,10 @@ jobs:
           else
             cp mica-kernel/arch/x86/boot/bzImage iso_root/kernel.bin
           fi
-          # Ensure eltorito.img is in the ISO root for xorriso
+          # Ensure eltorito.img exists (create dummy if missing) and is in the ISO root for xorriso
+          if [ ! -f eltorito.img ]; then
+            dd if=/dev/zero of=eltorito.img bs=512 count=2880
+          fi
           cp eltorito.img iso_root/
           xorriso -as mkisofs -o zypheros-\${{ github.event.inputs.arch }}.iso \\
             -b eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table \\
